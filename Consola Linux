@@ -1,0 +1,233 @@
+class File {
+	private String name;
+
+	public File(String name) {
+		this.name = name;
+	}
+
+	public String getName() {
+		return name;
+	}
+}
+
+import java.util.ArrayList;
+import java.util.List;
+
+class Directory {
+	private String name;
+	private Directory parent;
+	private List<Directory> directories;
+	private List<File> files;
+
+	public List<Directory> getDirectories() {
+		return directories;
+	}
+
+	public void setDirectories(List<Directory> directories) {
+		this.directories = directories;
+	}
+
+	public List<File> getFiles() {
+		return files;
+	}
+
+	public void setFiles(List<File> files) {
+		this.files = files;
+	}
+
+	public void setParent(Directory parent) {
+		this.parent = parent;
+	}
+
+	public Directory(String name) {
+		this(name, null);
+	}
+
+	public Directory(String name, Directory parent) {
+		this.name = name;
+		this.parent = parent;
+		this.directories = new ArrayList<>();
+		this.files = new ArrayList<>();
+	}
+
+	public Directory getParent() {
+		return parent;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public void addFile(File file) {
+		files.add(file);
+	}
+
+	public void addDirectory(Directory dir) {
+		directories.add(dir);
+	}
+
+	public Directory getSubDirectory(String name) {
+		for (Directory dir : directories) {
+			if (dir.name.equals(name)) {
+				return dir;
+			}
+		}
+		return null;
+	}
+
+	public void listContents() {
+		for (Directory dir : directories) {
+			System.out.println(dir.name + "/");
+		}
+		for (File file : files) {
+			System.out.println(file.getName());
+		}
+	}
+
+	public String getPath() {
+		if (parent == null) {
+			return name;
+		}
+		return parent.getPath() + name + "/";
+	}
+}
+
+public class FileSystem {
+	private Directory root;
+	private Directory currentDir;
+
+	public FileSystem() {
+		this.root = new Directory("/");
+		this.currentDir = root;
+	}
+
+	public void cd(String dirName) {
+		if (dirName.equals("..")) {
+			if (currentDir.getParent() != null) {
+				currentDir = currentDir.getParent();
+			}
+		} else {
+			Directory dir = currentDir.getSubDirectory(dirName);
+			if (dir != null) {
+				currentDir = dir;
+			} else {
+				System.out.println("No existe ese directorio: " + dirName);
+			}
+		}
+	}
+
+	public void touch(String fileName) {
+		String[] parts = fileName.split("\\.");
+		if (parts.length == 2 && !(parts[0].equals("") || parts[1].equals(""))) {
+			for (File file : currentDir.getFiles()) {
+				if (file.getName().equals(fileName)) {
+					System.out.println("El directorio ya existe. Cree otro");
+					return;
+				}
+			}
+			currentDir.addFile(new File(fileName));
+		} else {
+			System.out.println("el archivo no es valido");
+			return;
+		}
+	}
+
+	public void ls(String fileName) {
+		currentDir.listContents();
+	}
+
+	public void mkdir(String dirName) {
+		for (Directory dir : currentDir.getDirectories()) {
+			if (dir.getName().equals(dirName)) {
+				System.out.println("El directorio ya existe. Cree otro");
+				return;
+			}
+		}
+		currentDir.addDirectory(new Directory(dirName, currentDir));
+	}
+
+	public Directory getRoot() {
+		return root;
+	}
+
+	public void setRoot(Directory root) {
+		this.root = root;
+	}
+
+	public Directory getCurrentDir() {
+		return currentDir;
+	}
+
+	public void setCurrentDir(Directory currentDir) {
+		this.currentDir = currentDir;
+	}
+
+	public void pwd() {
+		System.out.println(currentDir.getPath());
+	}
+
+	public void recursive(Directory currentDir) {
+		for (Directory dir : currentDir.getDirectories()) {
+			dir.listContents();
+			recursive(dir);
+		}
+
+	}
+}
+
+import java.util.Scanner;
+
+public class Main {
+	public static void main(String[] args) {
+		FileSystem fileSystem = new FileSystem();
+		Scanner scanner = new Scanner(System.in);
+		String input;
+
+		System.out.println("Bienvenido al sistema de archivos. Escribe un comando (cd, touch, ls, mkdir, pwd, exit).");
+
+		while (true) {
+			System.out.print("> ");
+			input = scanner.nextLine().trim();
+			String[] parts = input.split(" ");
+
+			switch (parts[0]) {
+			case "cd":
+				if (parts.length > 1) {
+					fileSystem.cd(parts[1]);
+				} else {
+					System.out.println("Falta el nombre del directorio.");
+				}
+				break;
+			case "touch":
+				if (parts.length > 1) {
+					fileSystem.touch(parts[1]);
+				} else {
+					System.out.println("Falta el nombre del archivo.");
+				}
+				break;
+			case "ls":
+				fileSystem.ls(parts[1]);
+				break;
+			case "mkdir":
+				if (parts.length > 1) {
+					fileSystem.mkdir(parts[1]);
+				} else {
+					System.out.println("Falta el nombre del directorio.");
+				}
+				break;
+			case "pwd":
+				fileSystem.pwd();
+				break;
+			case "exit":
+				System.out.println("Saliendo del sistema de archivos.");
+				return;
+			default:
+				System.out.println("Comando no reconocido.");
+			}
+		}
+	}
+}
